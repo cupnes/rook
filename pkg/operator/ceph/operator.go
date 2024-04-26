@@ -33,6 +33,9 @@ import (
 	"github.com/rook/rook/pkg/operator/k8sutil"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"net/http"
+	_ "net/http/pprof"
 )
 
 var (
@@ -94,6 +97,13 @@ func (o *Operator) Run() error {
 	// Used to watch for operator's config changes
 	configChan := make(chan os.Signal, 1)
 	signal.Notify(configChan, syscall.SIGHUP)
+
+	go func() {
+		err := http.ListenAndServe("0.0.0.0:6060", nil)
+		if err != nil {
+			logger.Error(err, "HTTP server failed")
+		}
+	}()
 
 	// Main infinite loop to watch for channel events
 	for {
